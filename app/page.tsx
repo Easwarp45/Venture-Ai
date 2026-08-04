@@ -48,9 +48,12 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 glass border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-xl gradient-primary flex items-center justify-center">
-              <Rocket className="h-5 w-5 text-white" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="VentureAI Logo" 
+              className="h-9 w-9 shrink-0 object-contain rounded-lg"
+              style={{ filter: 'invert(1) hue-rotate(180deg)', mixBlendMode: 'screen' }}
+            />
             <span className="font-display text-xl font-bold">VentureAI</span>
           </Link>
           <div className="hidden md:flex items-center gap-8">
@@ -329,9 +332,12 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
-                <Rocket className="h-4 w-4 text-white" />
-              </div>
+              <img 
+                src="/logo.png" 
+                alt="VentureAI Logo" 
+                className="h-8 w-8 shrink-0 object-contain rounded-lg"
+                style={{ filter: 'invert(1) hue-rotate(180deg)', mixBlendMode: 'screen' }}
+              />
               <span className="font-display font-bold">VentureAI</span>
               <span className="text-sm text-muted-foreground ml-2">Your AI Co-Founder</span>
             </div>

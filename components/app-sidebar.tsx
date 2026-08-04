@@ -44,9 +44,12 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
         {/* Logo */}
         <div className="h-16 flex items-center px-4 border-b border-border/40 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden">
-            <div className="h-9 w-9 rounded-xl gradient-primary flex items-center justify-center shrink-0">
-              <Rocket className="h-5 w-5 text-white" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="VentureAI Logo" 
+              className="h-9 w-9 shrink-0 object-contain rounded-lg"
+              style={{ filter: 'invert(1) hue-rotate(180deg)', mixBlendMode: 'screen' }}
+            />
             {!collapsed && (
               <span className="font-display text-lg font-bold whitespace-nowrap">VentureAI</span>
             )}

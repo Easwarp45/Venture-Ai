@@ -50,9 +50,12 @@ export default function SignInPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center">
-              <Rocket className="h-5 w-5 text-white" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="VentureAI Logo" 
+              className="h-10 w-10 shrink-0 object-contain rounded-lg"
+              style={{ filter: 'invert(1) hue-rotate(180deg)', mixBlendMode: 'screen' }}
+            />
             <span className="font-display text-2xl font-bold">VentureAI</span>
           </Link>
         </div>
