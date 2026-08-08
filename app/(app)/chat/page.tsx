@@ -46,6 +46,20 @@ export default function ChatPage() {
   const [showSidebar, setShowSidebar] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const recognitionRef = React.useRef<any>(null);
+  const originalInputRef = React.useRef('');
+
+  // Cleanup speech recognition on unmount
+  React.useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {
+          console.error('Error aborting speech recognition on unmount:', e);
+        }
+      }
+    };
+  }, []);
 
   const persona = PERSONAS[currentPersona];
 
@@ -186,24 +200,78 @@ export default function ChatPage() {
   };
 
   const startListening = () => {
+    // Abort existing session if running
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch (e) {
+        console.error('Error aborting previous SpeechRecognition:', e);
+      }
+    }
+
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) { toast.error('Voice input not supported in this browser.'); return; }
+    if (!SR) {
+      toast.error('Voice input is not supported in this browser. Please use Google Chrome or Microsoft Edge.');
+      return;
+    }
+
+    // Save the input text before starting transcription
+    originalInputRef.current = input;
+
     const recognition = new SR();
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
     recognition.onresult = (e: any) => {
-      const transcript = Array.from(e.results).map((r: any) => r[0].transcript).join('');
-      setInput(transcript);
+      let sessionTranscript = '';
+      for (let i = 0; i < e.results.length; i++) {
+        sessionTranscript += e.results[i][0].transcript;
+      }
+      
+      const prefix = originalInputRef.current;
+      const separator = prefix && !prefix.endsWith(' ') ? ' ' : '';
+      setInput(prefix + separator + sessionTranscript);
     };
-    recognition.onend = () => setListening(false);
-    recognition.onerror = () => { setListening(false); toast.error('Voice input error.'); };
-    recognition.start();
-    setListening(true);
-    recognitionRef.current = recognition;
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech Recognition Error:', event);
+      setListening(false);
+      
+      if (event.error === 'not-allowed') {
+        toast.error('Microphone access denied. Please click the microphone icon in your browser address bar to allow access.');
+      } else if (event.error === 'no-speech') {
+        toast.error('No speech detected. Please check your mic and speak clearly.');
+      } else if (event.error === 'network') {
+        toast.error('Network error. Speech recognition requires an active internet connection.');
+      } else {
+        toast.error(`Voice recognition error: ${event.error}`);
+      }
+    };
+
+    try {
+      recognition.start();
+      setListening(true);
+      recognitionRef.current = recognition;
+    } catch (e) {
+      console.error('Failed to start SpeechRecognition:', e);
+      toast.error('Could not start voice recognition.');
+      setListening(false);
+    }
   };
 
   const stopListening = () => {
-    recognitionRef.current?.stop();
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        console.error('Error stopping SpeechRecognition:', e);
+      }
+    }
     setListening(false);
   };
 
@@ -268,6 +336,29 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-4">
+      <style>{`
+        @keyframes pulse-ring {
+          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+          70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        @keyframes voice-bar-bounce {
+          0%, 100% { transform: scaleY(0.2); }
+          50% { transform: scaleY(1.0); }
+        }
+        .voice-pulse-active {
+          animation: pulse-ring 1.5s infinite;
+        }
+        .voice-wave-bar {
+          display: inline-block;
+          width: 3.5px;
+          height: 18px;
+          background-color: hsl(var(--destructive));
+          border-radius: 9999px;
+          transform-origin: center;
+          animation: voice-bar-bounce 1s ease-in-out infinite;
+        }
+      `}</style>
       {/* Chat list sidebar */}
       <div className={cn(
         'shrink-0 w-64 border-r border-border/40 rounded-xl glass overflow-hidden flex-col',
@@ -486,20 +577,32 @@ export default function ChatPage() {
         <div className="p-4 border-t border-border/40">
           <div className="flex items-end gap-2">
             <button
+              type="button"
               onClick={listening ? stopListening : startListening}
               className={cn(
                 'p-2.5 rounded-lg border border-border/40 transition-all shrink-0',
-                listening ? 'bg-destructive/10 text-destructive border-destructive/40' : 'hover:bg-accent/10'
+                listening 
+                  ? 'bg-destructive/20 text-destructive border-destructive/60 scale-105 voice-pulse-active' 
+                  : 'hover:bg-accent/10'
               )}
               title={listening ? 'Stop recording' : 'Voice input'}
             >
               {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
+            {listening && (
+              <div className="flex items-center gap-1 px-2.5 h-[42px] shrink-0 border border-destructive/30 rounded-lg bg-destructive/5 select-none transition-all duration-300">
+                <span className="voice-wave-bar" style={{ animationDelay: '0.1s' }} />
+                <span className="voice-wave-bar" style={{ animationDelay: '0.3s' }} />
+                <span className="voice-wave-bar" style={{ animationDelay: '0.5s' }} />
+                <span className="voice-wave-bar" style={{ animationDelay: '0.2s' }} />
+                <span className="voice-wave-bar" style={{ animationDelay: '0.4s' }} />
+              </div>
+            )}
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={`Message ${persona.name}...`}
+              placeholder={listening ? 'Listening... speak now.' : `Message ${persona.name}...`}
               rows={1}
               className="flex-1 resize-none rounded-lg border border-border/40 bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring max-h-32"
               style={{ minHeight: '42px' }}
